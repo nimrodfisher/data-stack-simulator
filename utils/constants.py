@@ -205,6 +205,17 @@ TOOLS_DATA = {
             "license_type": "SaaS"
         },
         {
+            "name": "Rivery",
+            "base_price": 400,
+            "complexity": 2,
+            "pricing": "Base price $400/month + $0.45 per 1000 monthly active rows",
+            "price_formula": "rows_in_thousands * 0.45 + 400",
+            "pros": "Robust connectors, easy setup, automated monitoring",
+            "cons": "Can be expensive at scale, limited customization",
+            "integrations": "Supports 100+ pre-built connectors",
+            "license_type": "SaaS"
+        },
+        {
             "name": "Stitch",
             "base_price": 400,
             "complexity": 1,
