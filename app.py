@@ -89,47 +89,47 @@ def render_infrastructure_step():
     if setup_type == "No":
         st.info("""
         Based on your data volume, growth rate, and processing requirements, 
-        we'll analyze and recommend the most cost-effective cloud provider in the final step.
+        The tool analyzes and recommends the most cost-effective cloud provider in the final step.
 
-        Key factors we'll consider:
+        Key factors the tool considers:
         - Data volume and growth patterns
         - Processing requirements and compute needs
         - Storage access patterns and tier optimization
         - Geographic distribution and compliance needs
         - Cost optimization opportunities
 
-        Your preferred provider will be compared against other options to ensure the best fit.
+        Your preferred provider will be compared against other options to make sure the best fit is made.
         """)
 
     # Navigation buttons
     col1, col2 = st.columns([4, 1])
     with col2:
-                st.subheader("Stack Summary")
-
-                # Add cost explanation in expandable section
-                with st.expander("💡 How are costs calculated?", expanded=False):
-                    st.write("""
-                    **Monthly costs are calculated based on:**
-                    1. **Data Volume:**
-                       - Daily records × 30 days
-                       - Growth rate applied monthly
-                       - Historical data storage
-
-                    2. **Tool-Specific Pricing:**
-                       - Base subscription costs
-                       - Usage-based costs
-                       - Per-seat licensing (where applicable)
+        st.subheader("Stack Summary")
+    
+        # Add cost explanation in expandable section
+        with st.expander("💡 How are costs calculated?", expanded=False):
+            st.write("""
+            **Monthly costs are calculated based on:**
+            1. **Data Volume:**
+               - Daily records × 30 days
+               - Growth rate applied monthly
+               - Historical data storage
+    
+            2. **Tool-Specific Pricing:**
+               - Base subscription costs
+               - Usage-based costs
+               - Per-seat licensing (where applicable)
                     """)
-        if st.button("Next →", disabled=not selected_provider):
-            update_state(
-                infrastructure={
-                    'type': 'existing' if setup_type == "Yes" else 'new',
-                    'provider': selected_provider if setup_type == "Yes" else None,
-                    'preferred_provider': selected_provider if setup_type == "No" else None
-                }
-            )
-            update_state(step=2)
-            st.rerun()
+    if st.button("Next →", disabled=not selected_provider):
+        update_state(
+            infrastructure={
+                'type': 'existing' if setup_type == "Yes" else 'new',
+                'provider': selected_provider if setup_type == "Yes" else None,
+                'preferred_provider': selected_provider if setup_type == "No" else None
+            }
+        )
+        update_state(step=2)
+        st.rerun()
 
     if not selected_provider:
         st.warning("Please select a provider to proceed.")
