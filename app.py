@@ -243,36 +243,6 @@ def render_review_step():
 def render_recommendation_step():
     st.header("Step 5: Stack Recommendations")
 
-    with col2:
-    st.subheader("Stack Summary")
-
-    # Add explanation of stack complexity levels
-    with st.expander("Understanding Stack Complexity Levels", expanded=True):
-        st.write("""
-        We provide three stack options based on your needs:
-
-        **Simple Stack**
-        - Best for: Small teams and startups getting started with data
-        - Focus on ease of use and quick setup
-        - Lower initial costs but may need to upgrade as you scale
-        - Minimal technical expertise required
-        - Basic features covering essential needs
-
-        **Balanced Stack**
-        - Best for: Growing teams with moderate data needs
-        - Good balance between features and complexity
-        - Moderate cost with room for growth
-        - Some technical expertise helpful
-        - Advanced features with reasonable learning curve
-
-        **Advanced Stack**
-        - Best for: Data-driven enterprises with complex needs
-        - Maximum flexibility and customization
-        - Higher initial cost but better economies of scale
-        - Requires technical expertise
-        - Full feature set with advanced capabilities
-        """)
-
     state = get_state()
     costs = calculate_costs(
         state.infrastructure,
