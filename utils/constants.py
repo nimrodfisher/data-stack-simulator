@@ -204,17 +204,43 @@ TOOLS_DATA = {
             "integrations": "Supports 150+ pre-built connectors",
             "license_type": "SaaS"
         },
-        {
-            "name": "Rivery",
-            "base_price": 400,
-            "complexity": 2,
-            "pricing": "Base price $400/month + $0.45 per 1000 monthly active rows",
-            "price_formula": "rows_in_thousands * 0.45 + 400",
-            "pros": "Robust connectors, easy setup, automated monitoring",
-            "cons": "Can be expensive at scale, limited customization",
-            "integrations": "Supports 100+ pre-built connectors",
-            "license_type": "SaaS"
-        },
+{
+        "name": "Rivery",
+        "base_price": 200,  # Starter tier price
+        "complexity": 2,
+        "pricing": "Starts at $200/month (Starter), $1000/month (Growth), Custom (Enterprise)",
+        "price_formula": "base_price + (rows_in_thousands * 0.45)",  # Note: actual pricing may vary based on tier
+        "pros": "Data transformation capabilities, logic-based workflows, serverless, native Git integration",
+        "cons": "Different tiers have feature limitations, premium features require higher tiers",
+        "integrations": "190+ data sources and destinations",
+        "license_type": "SaaS",
+        "pricing_tiers": {
+            "starter": {
+                "price": 200,
+                "features": [
+                    "5 users",
+                    "Unlimited sources & targets",
+                    "Email support"
+                ]
+            },
+            "growth": {
+                "price": 1000,
+                "features": [
+                    "10 users",
+                    "Advanced transformations",
+                    "Priority support"
+                ]
+            },
+            "enterprise": {
+                "price": "Custom",
+                "features": [
+                    "Unlimited users",
+                    "Custom SLAs",
+                    "Dedicated support"
+                ]
+            }
+        }
+    },
         {
             "name": "Stitch",
             "base_price": 400,
