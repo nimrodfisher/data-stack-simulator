@@ -246,21 +246,6 @@ def render_recommendation_step():
     with col2:
     st.subheader("Stack Summary")
 
-    # Add cost explanation in expandable section
-    with st.expander("💡 How are costs calculated?", expanded=False):
-        st.write("""
-        **Monthly costs are calculated based on:**
-        1. **Data Volume:**
-           - Daily records × 30 days
-           - Growth rate applied monthly
-           - Historical data storage
-
-        2. **Tool-Specific Pricing:**
-           - Base subscription costs
-           - Usage-based costs
-           - Per-seat licensing (where applicable)
-                """)
-
     # Add explanation of stack complexity levels
     with st.expander("Understanding Stack Complexity Levels", expanded=True):
         st.write("""
@@ -351,6 +336,21 @@ def render_recommendation_step():
                                     st.write(f"- {license_type}: ${cost}/user/month")
 
             with col2:
+                # Add cost explanation in expandable section
+                with st.expander("💡 How are costs calculated?", expanded=False):
+                    st.write("""
+                    **Monthly costs are calculated based on:**
+                    1. **Data Volume:**
+                       - Daily records × 30 days
+                       - Growth rate applied monthly
+                       - Historical data storage
+            
+                    2. **Tool-Specific Pricing:**
+                       - Base subscription costs
+                       - Usage-based costs
+                       - Per-seat licensing (where applicable)
+                            """)    
+                    
                 st.subheader("Cost Breakdown")
                 render_cost_breakdown_chart(rec['costs'])
                 st.metric("Total Monthly Cost", f"${rec['costs']['total']:,.2f}")
