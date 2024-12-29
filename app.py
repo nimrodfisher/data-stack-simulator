@@ -103,23 +103,7 @@ def render_infrastructure_step():
 
     # Navigation buttons
     col1, col2 = st.columns([4, 1])
-    with col2:
-        st.subheader("Stack Summary")
-    
-        # Add cost explanation in expandable section
-        with st.expander("💡 How are costs calculated?", expanded=False):
-            st.write("""
-            **Monthly costs are calculated based on:**
-            1. **Data Volume:**
-               - Daily records × 30 days
-               - Growth rate applied monthly
-               - Historical data storage
-    
-            2. **Tool-Specific Pricing:**
-               - Base subscription costs
-               - Usage-based costs
-               - Per-seat licensing (where applicable)
-                    """)
+
     if st.button("Next →", disabled=not selected_provider):
         update_state(
             infrastructure={
@@ -258,6 +242,24 @@ def render_review_step():
 
 def render_recommendation_step():
     st.header("Step 5: Stack Recommendations")
+
+        with col2:
+        st.subheader("Stack Summary")
+    
+        # Add cost explanation in expandable section
+        with st.expander("💡 How are costs calculated?", expanded=False):
+            st.write("""
+            **Monthly costs are calculated based on:**
+            1. **Data Volume:**
+               - Daily records × 30 days
+               - Growth rate applied monthly
+               - Historical data storage
+    
+            2. **Tool-Specific Pricing:**
+               - Base subscription costs
+               - Usage-based costs
+               - Per-seat licensing (where applicable)
+                    """)
 
     # Add explanation of stack complexity levels
     with st.expander("Understanding Stack Complexity Levels", expanded=True):
