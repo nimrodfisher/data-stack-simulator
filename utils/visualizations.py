@@ -11,8 +11,8 @@ def render_cost_breakdown_chart(costs: dict):
     Args:
         costs (dict): Dictionary containing cost breakdowns for different components
     """
-    # Skip total from components
-    components = [k for k, v in costs.items() if k.lower() != 'total']
+    # Skip total from components and ensure we only include actual costs
+    components = [k for k, v in costs.items() if k.lower() != 'total' and v > 0]
     values = [costs[k] for k in components]
 
     # Create percentage of total for each component
@@ -65,31 +65,34 @@ def render_cost_breakdown_chart(costs: dict):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_stack_comparison_chart(recommendations: list):
+def render_stack_comparison_chart(recommendations: list, exclude_modeling: bool = False):
     """
     Render a stacked bar chart comparing different stack options.
 
     Args:
         recommendations (list): List of dictionaries containing stack recommendations
+        exclude_modeling (bool): Whether modeling component is excluded
     """
     # Prepare data for visualization with tool names
     comparison_data = []
     for rec in recommendations:
         for component, cost in rec['costs'].items():
-            # Skip the total component
+            # Skip the total component and modeling if excluded
             if component.lower() == 'total':
+                continue
+            if exclude_modeling and component.lower() == 'modeling':
                 continue
 
             # Get tool name if it's a component with a tool
             tool_name = rec['stack'].get(component, {}).get('name', '') if component != 'infrastructure' else 'Cloud Infrastructure'
 
-            if component != 'infrastructure': #Removed the entire block related to infrastructure
+            if component != 'infrastructure':
                 comparison_data.append({
                     'Stack': rec['level'].title(),
                     'Component': component.title(),
                     'Cost': cost,
                     'Tool': tool_name,
-                    'text': f'${cost:,.0f}\n{tool_name}'  # Combined cost and tool name for display
+                    'text': f'${cost:,.0f}\n{tool_name}'
                 })
 
     # Calculate percentages for each stack
@@ -97,29 +100,33 @@ def render_stack_comparison_chart(recommendations: list):
     stack_totals = df.groupby('Stack')['Cost'].sum().to_dict()
     df['percentage'] = df.apply(lambda row: (row['Cost'] / stack_totals[row['Stack']]) * 100, axis=1)
 
+    # Define color map based on included components
+    base_color_map = {
+        'Extraction': '#66c2a5',
+        'Warehousing': '#8da0cb',
+        'Visualization': '#e78ac3'
+    }
+    if not exclude_modeling:
+        base_color_map['Modeling'] = '#fc8d62'
+
     # Create stacked bar chart
     fig = px.bar(
         df,
         x='Stack',
         y='Cost',
         color='Component',
-        color_discrete_map={
-            'Extraction': '#66c2a5',
-            'Modeling': '#fc8d62',
-            'Warehousing': '#8da0cb',
-            'Visualization': '#e78ac3'
-        },
+        color_discrete_map=base_color_map,
         title='Cost Comparison Across Stack Options',
         barmode='stack',
         height=500,
         labels={'Cost': 'Monthly Cost ($)', 'Stack': 'Stack Option'},
-        text='text'  # Use the combined cost and tool name text
+        text='text'
     )
 
     # Update traces to show text inside bars and remove hover
     fig.update_traces(
         textposition='inside',
-        hoverinfo='skip',  # Remove hover tooltip
+        hoverinfo='skip',
         textangle=0,
         insidetextanchor='middle',
         textfont=dict(size=10)
@@ -159,8 +166,6 @@ def render_stack_comparison_chart(recommendations: list):
     cols = st.columns(len(stack_totals))
     for idx, (stack, total) in enumerate(total_costs.values):
         cols[idx].metric(stack, f"${total:,.2f}/month")
-
-
 
 
 def render_monthly_growth_projection(initial_cost: float, growth_rate: float, months: int = 12):
