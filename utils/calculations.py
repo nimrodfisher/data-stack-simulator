@@ -156,7 +156,7 @@ def recommend_cloud_provider(data_volume: float, growth_rate: float) -> str:
             return 'azure'  # Azure for smaller, stable workloads
 
 
-def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_seats: int = 1) -> List[Dict]:
+def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_seats: int = 1, exclude_modeling: bool = False) -> List[Dict]:
     """Generate stack recommendations based on data volume and costs."""
     monthly_active_rows = costs['total_records_per_month']
     monthly_models = int(costs['total_records_per_month'] / 1000)
@@ -194,39 +194,36 @@ def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_s
 
     recommendations = []
 
-    # Simple Stack (optimize for simplicity)
-    simple_stack = {
-        'extraction': min(TOOLS_DATA['extraction'], key=lambda x: x['complexity']),
-        'modeling': min(TOOLS_DATA['modeling'], key=lambda x: x['complexity']),
-        'warehousing': warehousing_options[0],  # Already filtered/sorted based on provider
-        'visualization': min(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
-    }
-
-    # Advanced Stack (optimize for features/capabilities)
-    advanced_stack = {
-        'extraction': max(TOOLS_DATA['extraction'], key=lambda x: x['complexity']),
-        'modeling': max(TOOLS_DATA['modeling'], key=lambda x: x['complexity']),
-        'warehousing': warehousing_options[0],  # Already filtered/sorted based on provider
-        'visualization': max(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
-    }
-    for rec in recommendations:
-      if exclude_modeling:
-          # Remove modeling costs from total if excluded
-          modeling_cost = rec['costs'].get('modeling', 0)
-          rec['costs']['total'] -= modeling_cost
-    return recommendations
-
-    # Balanced Stack (optimize for both cost and complexity)
     def get_balanced_tool(tools):
         # Sort tools by a combined score of cost and complexity
         return sorted(tools, key=lambda x: (x['base_price'] + (x['complexity'] * 100)))[len(tools) // 2]
 
+    # Simple Stack (optimize for simplicity)
+    simple_stack = {
+        'extraction': min(TOOLS_DATA['extraction'], key=lambda x: x['complexity']),
+        'warehousing': warehousing_options[0],
+        'visualization': min(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
+    }
+    if not exclude_modeling:
+        simple_stack['modeling'] = min(TOOLS_DATA['modeling'], key=lambda x: x['complexity'])
+
+    # Advanced Stack (optimize for features/capabilities)
+    advanced_stack = {
+        'extraction': max(TOOLS_DATA['extraction'], key=lambda x: x['complexity']),
+        'warehousing': warehousing_options[0],
+        'visualization': max(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
+    }
+    if not exclude_modeling:
+        advanced_stack['modeling'] = max(TOOLS_DATA['modeling'], key=lambda x: x['complexity'])
+
+    # Balanced Stack (optimize for both cost and complexity)
     balanced_stack = {
         'extraction': get_balanced_tool(TOOLS_DATA['extraction']),
-        'modeling': get_balanced_tool(TOOLS_DATA['modeling']),
-        'warehousing': warehousing_options[0],  # Already filtered/sorted based on provider
+        'warehousing': warehousing_options[0],
         'visualization': get_balanced_tool(TOOLS_DATA['visualization'])
     }
+    if not exclude_modeling:
+        balanced_stack['modeling'] = get_balanced_tool(TOOLS_DATA['modeling'])
 
     # Calculate costs for each stack
     for stack_type, stack in [
@@ -234,21 +231,26 @@ def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_s
         ('balanced', balanced_stack),
         ('advanced', advanced_stack)
     ]:
-        # Calculate tool costs
-        extraction_cost = calculate_extraction_cost(stack['extraction'], monthly_active_rows)
-        modeling_cost = monthly_models * 0.0001 + stack['modeling']['base_price']
-        warehousing_cost = stack['warehousing']['base_price']
-        visualization_cost = stack['visualization'].get('seat_cost', 0) * visualization_seats
+        # Initialize costs dictionary
+        costs_dict = {
+            'extraction': calculate_extraction_cost(stack['extraction'], monthly_active_rows),
+            'warehousing': stack['warehousing']['base_price'],
+            'visualization': stack['visualization'].get('seat_cost', 0) * visualization_seats
+        }
+        
+        # Add modeling costs only if not excluded
+        if not exclude_modeling and 'modeling' in stack:
+            costs_dict['modeling'] = monthly_models * 0.0001 + stack['modeling']['base_price']
+
+        # Calculate total cost
+        total_cost = sum(costs_dict.values())
 
         recommendations.append({
             'level': stack_type,
             'stack': stack,
             'costs': {
-                'extraction': extraction_cost,
-                'modeling': modeling_cost,
-                'warehousing': warehousing_cost,
-                'visualization': visualization_cost,
-                'total': (extraction_cost + modeling_cost + warehousing_cost + visualization_cost)
+                **costs_dict,
+                'total': total_cost
             }
         })
 
