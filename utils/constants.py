@@ -267,10 +267,10 @@ TOOLS_DATA = {
     "modeling": [
         {
             "name": "dbt",
-            "base_price": 200,
-            "complexity": 3,
-            "pricing": "Base price $200/month + $0.10 per 1000 models executed",
-            "price_formula": "monthly_models_thousands * 0.10 + 200",
+            "base_price": 100,
+            "complexity": 2,
+            "pricing": "Base price $100/month + $0.01 per 1000 models executed",
+            "price_formula": "monthly_models_thousands * 0.10 + 100",
             "pros": "Industry standard, great documentation, strong community",
             "cons": "Steep learning curve, requires SQL expertise",
             "integrations": "Works with all major data warehouses",
@@ -285,17 +285,6 @@ TOOLS_DATA = {
             "pros": "User-friendly interface, GCP native integration",
             "cons": "Less flexible than dbt, smaller community",
             "integrations": "Native BigQuery integration, supports other warehouses",
-            "license_type": "SaaS"
-        },
-        {
-            "name": "Looker",
-            "base_price": 300,
-            "complexity": 1,
-            "pricing": "Base price $300/month + $0.20 per 1000 models executed",
-            "price_formula": "monthly_models_thousands * 0.20 + 300",
-            "pros": "All-in-one solution, good for business users",
-            "cons": "Expensive, less separation of concerns",
-            "integrations": "Built-in visualization capabilities",
             "license_type": "SaaS"
         }
     ],
