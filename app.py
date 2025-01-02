@@ -250,35 +250,17 @@ def render_recommendation_step():
         state.volume_estimates
     )
 
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        visualization_seats = st.slider(
-            "Number of visualization tool seats",
-            min_value=1,
-            max_value=50,
-            value=state.visualization_seats,
-            key="viz_seats"
-        )
-        # Add modeling exclusion checkbox
-        exclude_modeling = st.checkbox(
-            "Exclude modeling layer",
-            value=state.get('exclude_modeling', False),
-            help="The modeling layer is optional and can be excluded if you don't need data transformation capabilities"
-        )
-
-    update_state(
-        visualization_seats=visualization_seats,
-        exclude_modeling=exclude_modeling
+    visualization_seats = st.slider(
+        "Number of visualization tool seats",
+        min_value=1,
+        max_value=50,
+        value=state.visualization_seats,
+        key="viz_seats"
     )
+    update_state(visualization_seats=visualization_seats)
 
-    # Get recommendations (only once)
-    recommendations = get_stack_recommendations(
-        costs, 
-        state.infrastructure, 
-        visualization_seats,
-        exclude_modeling
-    )
+    # Get recommendations
+    recommendations = get_stack_recommendations(costs, state.infrastructure, visualization_seats)
 
     # Display recommendations in tabs
     tabs = st.tabs(["Simple Stack", "Balanced Stack", "Advanced Stack"])
@@ -353,7 +335,7 @@ def render_recommendation_step():
 
     # Show stack comparison if requested
     if st.checkbox("Show Stack Comparison"):
-        render_stack_comparison_chart(recommendations, exclude_modeling)  # Pass exclude_modeling parameter
+        render_stack_comparison_chart(recommendations)
 
         # Add comparison insights
         st.write("\n### Key Differences Between Stacks")
@@ -384,7 +366,7 @@ def render_recommendation_step():
     if st.button("← Back to Review"):
         update_state(step=4)
         st.rerun()
-        
+
 def main():
     st.set_page_config(page_title="Data Stack Builder", layout="wide")
 
