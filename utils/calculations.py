@@ -209,6 +209,12 @@ def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_s
         'warehousing': warehousing_options[0],  # Already filtered/sorted based on provider
         'visualization': max(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
     }
+    for rec in recommendations:
+      if exclude_modeling:
+          # Remove modeling costs from total if excluded
+          modeling_cost = rec['costs'].get('modeling', 0)
+          rec['costs']['total'] -= modeling_cost
+    return recommendations
 
     # Balanced Stack (optimize for both cost and complexity)
     def get_balanced_tool(tools):
