@@ -7,7 +7,6 @@ from utils.state import init_session_state, get_state, update_state
 
 def render_infrastructure_step():
     st.header("Step 1: Infrastructure Setup")
-
     # Initialize session state variables
     if 'setup_type' not in st.session_state:
         st.session_state.setup_type = "Yes"  # Default value
@@ -150,6 +149,7 @@ def render_data_sources_step():
     if not selected:
         st.warning("Please select at least one data source to proceed.")
 
+
 def render_volume_estimation_step():
     st.header("Step 3: Volume Estimation")
 
@@ -198,6 +198,7 @@ def render_volume_estimation_step():
     if col2.button("Next →"):
         update_state(step=4, volume_estimates=volume_estimates)
         st.rerun()
+
 
 def render_review_step():
     st.header("Step 4: Review Your Selections")
@@ -250,6 +251,13 @@ def render_recommendation_step():
         state.volume_estimates
     )
 
+    # Add modeling toggle with default to include
+    exclude_modeling = not st.checkbox(
+        "Include modeling tool in stack",
+        value=True,  # Default to include modeling
+        help="Modern data stacks often include dedicated modeling tools for complex transformations. However, some tools like Rivery provide built-in transformation capabilities."
+    )
+
     visualization_seats = st.slider(
         "Number of visualization tool seats",
         min_value=1,
@@ -259,8 +267,13 @@ def render_recommendation_step():
     )
     update_state(visualization_seats=visualization_seats)
 
-    # Get recommendations
-    recommendations = get_stack_recommendations(costs, state.infrastructure, visualization_seats)
+    # Get recommendations with modeling preference
+    recommendations = get_stack_recommendations(
+        costs,
+        state.infrastructure,
+        visualization_seats,
+        exclude_modeling=exclude_modeling
+    )
 
     # Display recommendations in tabs
     tabs = st.tabs(["Simple Stack", "Balanced Stack", "Advanced Stack"])
@@ -274,24 +287,36 @@ def render_recommendation_step():
 
                 # Add summary based on complexity level
                 if rec['level'] == 'simple':
-                    st.info("✨ Optimized for ease of use and quick setup")
+                    st.info("✨ Most cost-effective solution with essential features")
                 elif rec['level'] == 'balanced':
                     st.info("⚖️ Good balance of features and complexity")
                 else:  # advanced
-                    st.info("🔧 Maximum flexibility and customization")
+                    st.info("🔧 Enterprise-grade solution with maximum flexibility")
 
-                for component, tool in rec['stack'].items():
+                # Define the order of components
+                component_order = ['extraction', 'modeling', 'warehousing', 'visualization']
+
+                # Display components in specified order
+                for component in component_order:
+                    if component not in rec['stack']:
+                        continue
+
+                    tool = rec['stack'][component]
                     with st.expander(f"{component.title()} Layer", expanded=True):
                         st.write(f"**Selected Tool:** {tool['name']}")
                         st.write(f"**Pricing:** {tool['pricing']}")
                         st.write("**Why this choice:**",
-                                 "Easy to set up and use" if rec['level'] == 'simple' else
+                                 "Cost-effective and easy to set up" if rec['level'] == 'simple' else
                                  "Good balance of features and usability" if rec['level'] == 'balanced' else
-                                 "Advanced features and customization options"
+                                 "Enterprise-grade features and customization options"
                                  )
                         st.write("**Pros:**", tool['pros'])
                         st.write("**Cons:**", tool['cons'])
                         st.write("**Integrations:**", tool['integrations'])
+
+                        # Add modeling note if applicable
+                        if rec.get('modeling_note') and component == 'extraction':
+                            st.info(rec['modeling_note'])
 
                         # Show tool-specific details
                         if component == 'warehousing':
@@ -306,66 +331,35 @@ def render_recommendation_step():
                                     st.write(f"- {license_type}: ${cost}/user/month")
 
             with col2:
-                # Add cost explanation in expandable section
-                with st.expander("💡 How are costs calculated?", expanded=False):
-                    st.write("""
-                    **Monthly costs are calculated based on:**
-                    1. **Data Volume:**
-                       - Daily records × 30 days
-                       - Growth rate applied monthly
-                       - Historical data storage
-            
-                    2. **Tool-Specific Pricing:**
-                       - Base subscription costs
-                       - Usage-based costs
-                       - Per-seat licensing (where applicable)
-                            """)    
-                    
                 st.subheader("Cost Breakdown")
                 render_cost_breakdown_chart(rec['costs'])
                 st.metric("Total Monthly Cost", f"${rec['costs']['total']:,.2f}")
 
-                # Add cost considerations
-                if rec['level'] == 'simple':
-                    st.write("💡 Lower initial costs, may need to upgrade as you scale")
-                elif rec['level'] == 'balanced':
-                    st.write("💡 Moderate costs with room for growth")
-                else:
-                    st.write("💡 Higher initial cost but better economies of scale")
-
-    # Show stack comparison if requested
+    # Show stack comparison
     if st.checkbox("Show Stack Comparison"):
-        render_stack_comparison_chart(recommendations)
+        render_stack_comparison_chart(recommendations, exclude_modeling=exclude_modeling)
 
-        # Add comparison insights
-        st.write("\n### Key Differences Between Stacks")
-        cols = st.columns(3)
+        # st.write("\n### Key Differences Between Stacks")
+        # cols = st.columns(3)
+        #
+        # with cols[0]:
+        #     st.write("**Simple Stack**")
+        #     st.write("- Most cost-effective")
+        #     st.write("- Quick to implement")
+        #     st.write("- Essential features")
+        #
+        # with cols[1]:
+        #     st.write("**Balanced Stack**")
+        #     st.write("- Moderate pricing")
+        #     st.write("- Advanced features")
+        #     st.write("- Good automations")
+        #
+        # with cols[2]:
+        #     st.write("**Advanced Stack**")
+        #     st.write("- Enterprise pricing")
+        #     st.write("- Full feature set")
+        #     st.write("- Maximum flexibility")
 
-        with cols[0]:
-            st.write("**Simple Stack**")
-            st.write("- Quick to implement")
-            st.write("- Minimal training needed")
-            st.write("- Basic features")
-            st.write("- Limited customization")
-
-        with cols[1]:
-            st.write("**Balanced Stack**")
-            st.write("- Moderate setup time")
-            st.write("- Some training required")
-            st.write("- Advanced features")
-            st.write("- Good customization")
-
-        with cols[2]:
-            st.write("**Advanced Stack**")
-            st.write("- Complex implementation")
-            st.write("- Significant training needed")
-            st.write("- Full feature set")
-            st.write("- Maximum flexibility")
-
-    # Back button
-    if st.button("← Back to Review"):
-        update_state(step=4)
-        st.rerun()
 
 def main():
     st.set_page_config(page_title="Data Stack Builder", layout="wide")
@@ -388,6 +382,16 @@ def main():
         render_review_step()
     elif state.step == 5:
         render_recommendation_step()
+
+    # Add divider and CTA
+    st.divider()
+    st.markdown("### 📚 Want to learn more about building data stacks and data analytics methods?")
+    st.markdown(
+        """
+        [Read more on my eBook and additional helpful resources here](https://tdh-analytics.com/resources/) 🚀
+        """
+    )
+
 
 if __name__ == "__main__":
     main()
