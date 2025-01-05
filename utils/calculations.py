@@ -161,22 +161,8 @@ def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_s
     monthly_active_rows = costs['total_records_per_month']
     monthly_models = int(costs['total_records_per_month'] / 1000)
 
-    # If this is a new setup, recommend a provider
-    if infrastructure['type'] == 'new':
-        avg_growth_rate = sum(
-            float(vol.get('growth', 0))
-            for vol in costs['volume_estimates'].values()
-        ) / len(costs['volume_estimates'])
-
-        infrastructure['provider'] = recommend_cloud_provider(
-            monthly_active_rows,
-            avg_growth_rate
-        )
-
-    # Get the provider (either existing or recommended)
+    # Get provider and filter warehousing options
     provider = infrastructure.get('provider') or infrastructure.get('preferred_provider')
-
-    # Filter warehousing options based on cloud provider
     warehousing_options = []
     for warehouse in TOOLS_DATA['warehousing']:
         if provider == 'gcp' and warehouse['name'] == 'BigQuery':
@@ -184,74 +170,102 @@ def get_stack_recommendations(costs: Dict, infrastructure: Dict, visualization_s
         elif provider == 'aws' and warehouse['name'] == 'Snowflake':
             warehousing_options.append(warehouse)
         elif provider == 'azure':
-            # For Azure, include both but sort by cost+complexity
             if warehouse['name'] in ['BigQuery', 'Snowflake']:
                 warehousing_options.append(warehouse)
 
-    # Sort warehousing options by combined score of cost and complexity
-    if provider == 'azure':
-        warehousing_options.sort(key=lambda x: x['base_price'] + (x['complexity'] * 100))
+    def get_extraction_tool(level: str) -> Dict:
+        """Get appropriate extraction tool based on stack level."""
+        tools = TOOLS_DATA['extraction']
+
+        if level == 'simple':
+            # For simple stack, choose between Airbyte and Stitch only
+            simple_tools = [t for t in tools if t['name'] in ['Airbyte', 'Stitch']]
+            return min(simple_tools, key=lambda x: x['base_price'] + (x['complexity'] * 50))
+        else:
+            # For both balanced and advanced, we'll work with Fivetran and Rivery
+            premium_tools = [t for t in tools if t['name'] in ['Fivetran', 'Rivery']]
+            # Sort by base price to determine which goes to balanced vs advanced
+            sorted_premium = sorted(premium_tools, key=lambda x: x['base_price'])
+
+            if level == 'balanced':
+                # Return the cheaper of Fivetran/Rivery
+                return sorted_premium[0]
+            else:  # advanced
+                # Return the more expensive of Fivetran/Rivery
+                return sorted_premium[1]
+
+    def get_modeling_tool(level: str) -> Dict:
+        """Get appropriate modeling tool based on stack level."""
+        tools = TOOLS_DATA['modeling']
+        if level == 'simple':
+            return min(tools, key=lambda x: x['base_price'])
+        elif level == 'advanced':
+            return max(tools, key=lambda x: x['complexity'])
+        else:
+            return sorted(tools, key=lambda x: x['base_price'] + (x['complexity'] * 100))[1]
+
+    # Build stacks with all components
+    stacks = {
+        'simple': {
+            'extraction': get_extraction_tool('simple'),
+            'modeling': get_modeling_tool('simple'),
+            'warehousing': warehousing_options[0],
+            'visualization': next(t for t in TOOLS_DATA['visualization'] if t['name'] == 'Looker Studio')
+        },
+        'balanced': {
+            'extraction': get_extraction_tool('balanced'),
+            'modeling': get_modeling_tool('balanced'),
+            'warehousing': warehousing_options[0],
+            'visualization': next(t for t in TOOLS_DATA['visualization'] if t['name'] == 'Power BI')
+        },
+        'advanced': {
+            'extraction': get_extraction_tool('advanced'),
+            'modeling': get_modeling_tool('advanced'),
+            'warehousing': warehousing_options[0],
+            'visualization': next(t for t in TOOLS_DATA['visualization'] if t['name'] == 'Looker Enterprise')
+        }
+    }
 
     recommendations = []
+    for level, stack in stacks.items():
+        # Remove modeling if excluded
+        working_stack = stack.copy()
+        if exclude_modeling:
+            working_stack.pop('modeling', None)
 
-    def get_balanced_tool(tools):
-        # Sort tools by a combined score of cost and complexity
-        return sorted(tools, key=lambda x: (x['base_price'] + (x['complexity'] * 100)))[len(tools) // 2]
-
-    # Simple Stack (optimize for simplicity)
-    simple_stack = {
-        'extraction': min(TOOLS_DATA['extraction'], key=lambda x: x['complexity']),
-        'warehousing': warehousing_options[0],
-        'visualization': min(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
-    }
-    if not exclude_modeling:
-        simple_stack['modeling'] = min(TOOLS_DATA['modeling'], key=lambda x: x['complexity'])
-
-    # Advanced Stack (optimize for features/capabilities)
-    advanced_stack = {
-        'extraction': max(TOOLS_DATA['extraction'], key=lambda x: x['complexity']),
-        'warehousing': warehousing_options[0],
-        'visualization': max(TOOLS_DATA['visualization'], key=lambda x: x['complexity'])
-    }
-    if not exclude_modeling:
-        advanced_stack['modeling'] = max(TOOLS_DATA['modeling'], key=lambda x: x['complexity'])
-
-    # Balanced Stack (optimize for both cost and complexity)
-    balanced_stack = {
-        'extraction': get_balanced_tool(TOOLS_DATA['extraction']),
-        'warehousing': warehousing_options[0],
-        'visualization': get_balanced_tool(TOOLS_DATA['visualization'])
-    }
-    if not exclude_modeling:
-        balanced_stack['modeling'] = get_balanced_tool(TOOLS_DATA['modeling'])
-
-    # Calculate costs for each stack
-    for stack_type, stack in [
-        ('simple', simple_stack),
-        ('balanced', balanced_stack),
-        ('advanced', advanced_stack)
-    ]:
-        # Initialize costs dictionary
+        # Calculate costs
         costs_dict = {
-            'extraction': calculate_extraction_cost(stack['extraction'], monthly_active_rows),
-            'warehousing': stack['warehousing']['base_price'],
-            'visualization': stack['visualization'].get('seat_cost', 0) * visualization_seats
+            'extraction': calculate_extraction_cost(working_stack['extraction'], monthly_active_rows),
+            'warehousing': working_stack['warehousing']['base_price'],
+            'visualization': working_stack['visualization'].get('seat_cost', 0) * visualization_seats
         }
-        
-        # Add modeling costs only if not excluded
-        if not exclude_modeling and 'modeling' in stack:
-            costs_dict['modeling'] = monthly_models * 0.0001 + stack['modeling']['base_price']
+
+        # Add modeling cost if included
+        if not exclude_modeling:
+            costs_dict['modeling'] = monthly_models * 0.0001 + working_stack['modeling']['base_price']
 
         # Calculate total cost
         total_cost = sum(costs_dict.values())
 
+        # Add modeling capabilities note for Rivery
+        modeling_note = None
+        if working_stack['extraction']['name'] == 'Rivery':
+            modeling_note = "Rivery provides built-in data modeling capabilities that can be leveraged without additional tools."
+
         recommendations.append({
-            'level': stack_type,
-            'stack': stack,
+            'level': level,
+            'stack': working_stack,
             'costs': {
                 **costs_dict,
                 'total': total_cost
-            }
+            },
+            'modeling_note': modeling_note
         })
+
+    # Ensure simple stack is the cheapest option
+    recommendations.sort(key=lambda x: x['costs']['total'])
+    if recommendations[0]['level'] != 'simple':
+        simple_idx = next(i for i, r in enumerate(recommendations) if r['level'] == 'simple')
+        recommendations[0], recommendations[simple_idx] = recommendations[simple_idx], recommendations[0]
 
     return recommendations
