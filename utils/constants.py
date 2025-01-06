@@ -256,8 +256,8 @@ TOOLS_DATA = {
             "name": "Airbyte",
             "base_price": 300,
             "complexity": 3,
-            "pricing": "Volume of data to replicate + Number of rows to replicate from your API sources
-. Assuming base price $300/month + $0.30 per 1000 monthly active rows",
+            "pricing": """Volume of data to replicate + Number of rows to replicate from your API sources
+. Assuming base price $300/month + $0.30 per 1000 monthly active rows""",
             "price_formula": "rows_in_thousands * 0.30 + 300",
             "pros": "Open-source, highly customizable, growing community",
             "cons": "Credit system needs monitoring, complexity in usage estimation",
