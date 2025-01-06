@@ -3,7 +3,7 @@ DATA_CATEGORIES = {
     "transactional": {
         "label": "Transactional Data",
         "description": "Payment processing, orders, subscriptions",
-        "examples": "Stripe, Shopify, Adapty",
+        "examples": "Stripe, PayPal, Shopify, Adapty",
         "cost_per_record": 0.0001,
         "storage_multiplier": 1.5,
     },
@@ -17,14 +17,14 @@ DATA_CATEGORIES = {
     "marketing": {
         "label": "Marketing Data",
         "description": "Campaigns, email marketing, advertising",
-        "examples": "HubSpot, Marketo, Google Ads",
+        "examples": "HubSpot, Marketo, Pardot, Google Ads",
         "cost_per_record": 0.00015,
         "storage_multiplier": 1.8,
     },
     "customer": {
         "label": "Customer Data",
         "description": "Customer relationship management",
-        "examples": "Salesforce, HubSpot",
+        "examples": "Salesforce, HubSpot, Zoho CRM",
         "cost_per_record": 0.0002,
         "storage_multiplier": 1.7,
     }
@@ -208,7 +208,7 @@ TOOLS_DATA = {
         "name": "Rivery",
         "base_price": 200,  # Starter tier price
         "complexity": 2,
-        "pricing": "Starts at $200/month (Starter), $1000/month (Growth), Custom (Enterprise)",
+        "pricing": "Based on consumption: Compute hours + Active rows + Number of connectors",
         "price_formula": "base_price + (rows_in_thousands * 0.45)",  # Note: actual pricing may vary based on tier
         "pros": "Data transformation capabilities, logic-based workflows, serverless, native Git integration",
         "cons": "Different tiers have feature limitations, premium features require higher tiers",
@@ -243,10 +243,10 @@ TOOLS_DATA = {
     },
         {
             "name": "Stitch",
-            "base_price": 400,
+            "base_price": 100,
             "complexity": 1,
-            "pricing": "Base price $400/month + $0.40 per 1000 monthly active rows",
-            "price_formula": "rows_in_thousands * 0.40 + 400",
+            "pricing": "Base price $100/month + $0.40 per 1000 monthly active rows",
+            "price_formula": "rows_in_thousands * 0.40 + 100",
             "pros": "Simple setup, good documentation, cost-effective",
             "cons": "Less customization options, fewer advanced features",
             "integrations": "Supports 100+ data sources",
@@ -256,10 +256,11 @@ TOOLS_DATA = {
             "name": "Airbyte",
             "base_price": 300,
             "complexity": 3,
-            "pricing": "Base price $300/month + $0.30 per 1000 monthly active rows",
+            "pricing": "Volume of data to replicate + Number of rows to replicate from your API sources
+. Assuming base price $300/month + $0.30 per 1000 monthly active rows",
             "price_formula": "rows_in_thousands * 0.30 + 300",
             "pros": "Open-source, highly customizable, growing community",
-            "cons": "Requires more technical expertise, newer platform",
+            "cons": "Credit system needs monitoring, complexity in usage estimation",
             "integrations": "Supports 140+ connectors, custom connector development",
             "license_type": "Open Source / SaaS"
         }
