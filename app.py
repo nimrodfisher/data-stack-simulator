@@ -331,9 +331,9 @@ def render_recommendation_step():
                                     st.write(f"- {license_type}: ${cost}/user/month")
 
             with col2:
-                st.subheader("Cost Breakdown")
+                st.subheader("Estimated Cost Breakdown")
                 render_cost_breakdown_chart(rec['costs'])
-                st.metric("Total Monthly Cost", f"${rec['costs']['total']:,.2f}")
+                st.metric("Total Estimated Monthly Cost", f"${rec['costs']['total']:,.2f}")
 
     # Show stack comparison
     if st.checkbox("Show Stack Comparison"):
@@ -367,7 +367,7 @@ def main():
     init_session_state()
 
     st.title("Data Stack Builder")
-    st.write("Optimize your data infrastructure with tailored recommendations")
+    st.write("Build Optimize your data Stack with tailored recommendations")
 
     state = get_state()
     st.progress(state.step / 5)
