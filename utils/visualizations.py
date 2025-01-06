@@ -160,7 +160,7 @@ def render_stack_comparison_chart(recommendations: list, exclude_modeling: bool 
     st.plotly_chart(fig, use_container_width=True)
 
     # Add total cost comparison below the chart
-    st.write("**Total Monthly Cost by Stack:**")
+    st.write("**Total Estimated Monthly Cost by Stack:**")
     total_costs = pd.DataFrame(list(stack_totals.items()), columns=['Stack', 'Total Cost'])
     total_costs = total_costs.sort_values('Total Cost')
     cols = st.columns(len(stack_totals))
